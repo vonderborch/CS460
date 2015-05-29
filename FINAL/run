@@ -1,0 +1,49 @@
+#!/bin/bash
+echo Creating backups...
+cp vdisk disk
+cp ptable table
+cp mtxlib lib
+cp MTXinstallCD.iso cd.iso
+
+PARTITION=1
+chmod +x table
+VDISK=disk
+SECTOR=$(./table disk $PARTITION)
+OFFSET=$(expr $SECTOR \* 512)
+echo partition=$PARTITION sector=$SECTOR offset=$OFFSET
+#read dummy
+
+mount -o loop,offset=$OFFSET $VDISK /mnt
+
+for i in "init" "cp" "grep" "cat" "l2u" "login" "more" "sh" "test" "u2l"
+do
+    echo compiling $i.c .....
+    as86 -o u.o u.s
+    bcc -c -ansi $i.c &> file1
+    echo linking .......
+    ld86 u.o $i.o lib /usr/lib/bcc/libc.a 2> /dev/null
+
+    echo copying $i into $VDISK/bin/$i
+    ls
+    cp -av a.out /mnt/bin/$i
+    rm a.out
+done
+
+umount /mnt
+echo All programs compiled!
+echo file1:
+cat file1
+
+echo Running mtx...
+
+qemu -hda disk -m 520m -smp 2 -serial /dev/pts/15 -serial /dev/pts/25 \
+-parallel /dev/pts/10 -localtime #-cdrom cd.iso #-boot d
+
+echo Cleaning
+rm cd.iso
+rm table
+rm lib
+rm disk
+rm *.o
+
+echo Done!

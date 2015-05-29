@@ -1,0 +1,3 @@
+as86 -o getc.o getc.s
+ar r mylib getc.o 
+ar t mylib

@@ -1,0 +1,228 @@
+#ifndef INT_C
+#define INT_C
+
+#include "type.h"
+
+/*************************************************************************
+  usp  1   2   3   4   5   6   7   8   9  10   11   12    13  14  15  16
+----------------------------------------------------------------------------
+ |uds|ues|udi|usi|ubp|udx|ucx|ubx|uax|upc|ucs|uflag|retPC| a | b | c | d |
+----------------------------------------------------------------------------
+***************************************************************************/
+
+/****************** syscall handler in C ***************************/
+int kcinth()
+{
+   	int a,b,c,d, r;
+//==> WRITE CODE TO GET get syscall parameters a,b,c,d from ustack 
+    a = get_word(running->uss, running->usp + 18); // was 26
+    b = get_word(running->uss, running->usp + 20); // was 28
+    c = get_word(running->uss, running->usp + 22); // was 30
+    d = get_word(running->uss, running->usp + 24); // was 32
+	
+   switch(a)
+   {
+       case 0 : r = kgetpid();        break;
+       case 1 : r = kpd();            break;
+       case 2 : r = kchname(b);       break;
+       case 3 : r = kkfork();         break;
+       case 4 : r = ktswitch();       break;
+       case 5 : r = kkwait(b);        break;
+       case 6 : r = kkexit(b);        break;
+       
+       case 12: r = getMyname(b);     break;
+       case 20: r = hop(b);           break;
+
+       case 90: r = getc();           break;
+       case 91: r = putc(b);          break;
+       case 99: kkexit(b);            break;
+       default: printf("invalid syscall # : %d\n", a); 
+   }
+
+//==> WRITE CODE to let r be the return value to Umode
+    put_word(r, running->uss, running->usp + 8); // was 16
+    return r;
+}
+
+//============= WRITE C CODE FOR syscall functions ======================
+
+bool kcopy(u16 parent, u16 child, u16 size)
+{
+    int i;
+    
+    for (i = 0; i < size; i += 2)
+        put_word(get_word(parent, i), child, i);
+    
+    return true;
+}
+
+int hop(u32 newsegment)
+{
+    // Variables
+    int j, i;
+    u16 segment;
+        
+    // set it up to load umode properly!
+    segment = (newsegment + 1) * MTXSEG; // calculate the newsegment
+    kcopy(running->uss, segment, 32 * 1024);
+    //load("/bin/u1", segment);
+    for (i = 1; i <= 8; i++)
+        put_word(j, segment, -2 * i);
+    
+    put_word(0x0200, segment, segment - 2);
+    put_word(segment, segment, segment - 4);
+    put_word(segment, segment, segment - 14);
+    put_word(segment, segment, segment - 16);
+
+    running->uss = segment;
+    running->usp = segment - 16; //was 24
+
+    printf("Proc[%d] hopped to segment 0x%x!\n", running->pid, segment);
+    // return the proc!!!
+    return (running->pid);
+}
+
+int getMyname(char *myname)
+{
+  char buffer[64];
+  char *cp = buffer; // get a pointer to the buffer
+  int count = 0; 
+  // copy the proc name into the buffer
+  strcpy(buffer, running->name);
+  // save the name string for output and count the length of the string!
+  while (count < 64)
+  {
+     put_byte(*cp, running->uss, myname);
+     if (*cp == 0) break;
+     cp++;
+     myname++;
+     count++;
+  }
+  // return the length of the string. the string is returned in the passed char*/char[]
+  return count;
+}
+
+// returns the current process id
+int kgetpid()
+{
+  return running->pid;
+}
+
+// WRITE C code to print PROC information
+int kpd()
+{
+    int i, count;
+    bool showmoreinfo = false;
+    bool showevent = false;
+    bool showexitcode = false;
+    PROC *p;
+    
+    printf("=======================================================================\n");
+    printf("   name       status       pid       ppid       event       exitcode\n");
+    printf("-----------------------------------------------------------------------\n");
+    
+    for (i = 0; i < NPROC; i++)
+    {   // initialize all procs
+        showmoreinfo = true;
+        showevent = false;
+        showexitcode = false;
+        p = &proc[i];
+        count = 14 - strlen(p->name);
+        printf("%s", p->name);
+        while (count-- > 0)
+            printf(" ");
+        
+        // write the status and set the information vars!
+        switch (p->status)
+        {
+            case FREE:
+                printf("FREE         ");
+                showmoreinfo = false;
+                showexitcode = true;
+                break;
+            case READY:
+                printf("READY        ");
+                break;
+            case RUNNING:
+                printf("RUNNING      ");
+                break;
+            case STOPPED:
+                printf("STOPPED      ");
+                showexitcode = true;
+                break;
+            case SLEEP:
+                printf("SLEEP        ");
+                showevent = true;
+                break;
+            case ZOMBIE:
+                printf("ZOMBIE       ");
+                showevent = true;
+                break;
+        }
+        
+        // show pid and ppid?
+        if (showmoreinfo == true)
+            printf("%d         %d         ", p->pid, p->ppid);
+        else
+            printf("                    ");
+            
+        // show event num?
+        if (showevent == true)
+            printf("%d             ", p->event);
+        else
+            printf("              ");
+        
+        // show exit code?
+        if (showexitcode == true)
+            printf("%d\n", p->exitCode);
+        else
+            printf("\n");
+    }
+    printf("-----------------------------------------------------------------------\n");
+    return true;
+}
+
+// changes a process name
+int kchname(char *name)
+{
+    char c;
+    int i = 0;
+
+    while (i < 32)
+    {
+        c = get_byte(running->uss, name + i);
+        running->name[i] = c;
+        if (c == '\0') { break; }
+        i++;
+    }
+}
+
+// forks a process
+int kkfork()
+{
+    return kfork("/bin/u1");
+}
+
+// switches a process
+int ktswitch()
+{
+    return tswitch();
+}
+
+// waits a process
+int kkwait(int *status)
+{
+    int pid, c;
+    pid = kwait(&c);
+    put_word(c, running->uss, status);
+    return pid;
+}
+
+// exits a process
+int kkexit(int value)
+{
+    // use your kexit() in LAB3. do NOT let P1 die
+    kexit(value);
+}
+
+#endif

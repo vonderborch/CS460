@@ -1,0 +1,23 @@
+VFD=mtximage
+
+as86 -o ts.o ts.s
+bcc  -c -ansi t.c
+bcc  -c -ansi int.c
+bcc  -c -ansi kernel.c
+bcc  -c -ansi wait.c
+bcc  -c -ansi misc_functions.c
+bcc  -c -ansi do_functions.c
+bcc  -c -ansi helpers.c
+bcc  -c -ansi pipe.c
+ld86 -d -o mtx ts.o t.o int.o kernel.o wait.o misc_functions.o do_functions.o helpers.o pipe.o mtxlib /usr/lib/bcc/libc.a
+
+mount -o loop $VFD /mnt
+cp mtx /mnt/boot
+umount /mnt
+rm *.o mtx
+
+(cd USER; ./mku u1 u2)
+cp mtximage oldimage
+qemu-system-i386 -fda oldimage -no-fd-bootchk
+rm -f oldimage
+echo done

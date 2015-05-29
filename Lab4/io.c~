@@ -1,0 +1,237 @@
+#ifndef IO_C
+#define IO_C
+
+#include "type.h"
+
+#define BASE_10 10
+#define BASE_16 16
+
+// converts a string to an int.
+int atoi(char *s)
+{
+    int output = 0, neg = 1;
+    
+    if (*s == '-')
+    {
+        neg = -1;
+        s++;
+    }
+
+    while (*s)
+    {
+        output *= 10;
+        output += (int)((*s++) - '0');
+    }
+    
+    return neg * output;
+}
+
+// puts a string into the buffer.
+int gets(char s[])
+{
+    while((*s = getc()) != '\r')
+        putc(*s++);
+        
+    prints("\n\r");
+    *s = 0;
+    return 1;
+}
+
+// compares two strings. return 0 on bad, 1 on good.
+int strcmp(char *s1, char *s2)
+{
+    while (*s1 != 0 && *s2 != 0)
+    {
+        if (*s1++ != *s2++)
+            return 0;
+    }
+    
+    if (*s1 != *s2)
+        return 0;
+        
+    return 1;
+}
+
+// compares two strings for a certain number of characters. returns 0 on bad, 1 on good.
+int strncmp(char *s1, char *s2, u32 n)
+{
+    int i = 0;
+    
+    while (*s1 != 0 && *s2 != 0 && i < n)
+    {
+        if (*s1++ && *s2++)
+            return 0;
+        i++;
+    }
+    
+    if (*s1 != *s2)
+        return 0;
+        
+    return 1;
+}
+
+// copies one string into another.
+int strcpy(char *source, char *dest)
+{
+    while (*source != 0)
+    {
+        *source++ = *dest++;
+    }
+    *dest = 0;
+    return 1;
+}
+
+// copies one string into another for a certain number of characters.
+int strncpy(char *source, char *dest, u32 n)
+{
+    int i = 0;
+    while (*source != 0 && i < n)
+    {
+        *source++ = *dest++;
+        i++;
+    }
+    *dest = 0;
+    return 1;
+}
+
+// prints the string.
+void prints(char *s)
+{
+	char *current = s;
+	while (*current)
+	{
+		putc(*current++);
+	}
+}
+
+// recursive print hex.
+void rpu(u16 x, int base)
+{
+	char c;
+	if (x)
+	{
+		c = hextable[x % base];
+		rpu(x / base, base);
+		putc(c);
+	}
+}
+
+// prints an integer.
+void printu(u16 x)
+{
+    if (x==0)
+    {
+        putc('0');
+    }
+    else
+    {
+        rpu(x, BASE_10);
+    }
+}
+
+// print an integer.
+void printd(int x)
+{
+    if (x < 0)
+    {
+        putc('-');
+        x *= -1;
+    }
+    if (x == 0)
+    {
+        putc('0');
+    }
+    else
+    {
+        rpu(x, BASE_10);
+    }
+}
+
+// print a hex.
+void printx(u16 x)
+{
+    if (x == 0)
+    {
+        putc('0');
+    }
+    else
+    {
+        rpu((u16)x, BASE_16);
+    }
+}
+
+// print a long.
+void printl(u32 x)
+{
+    if (x == 0)
+    {
+        putc('0');
+    }
+    else
+    {
+        rpu((u32)x, BASE_10);
+    }
+}
+
+// print!
+void printf(char *fmt, ...)
+{
+    unsigned short bp;
+    char **cp;
+    char *fmtStr;
+    int *ip;
+    char tmp;
+    
+    // get some basic info...
+    bp = getbp();
+    cp = (char**)(bp+4);
+    fmtStr = *cp;
+    ip = (uint16_t *)(bp+6);
+
+    while(*fmtStr != 0)
+    {
+        if(*fmtStr == '%')
+        {
+            fmtStr++;
+            switch(*fmtStr)
+            {
+                // Print char
+                case 'c': tmp = (char)*ip;
+                        putc(tmp);
+                        break;
+                // print string
+                case 's': prints((char *)(*ip));
+                        break;
+                // print int
+                case 'd': printd((int)*ip);
+                        break;
+                // print hex
+                case 'x': printx((u16)*ip);
+                        break;
+                // print short
+                case 'u': printu((u16)*ip);
+                        break;
+                // print long
+                case 'l': ip++; 
+                        printu((u32)*ip);
+                        break;
+                // bad modifier
+                default: break;
+            }
+            ip++;
+        }
+        else
+        {
+            putc(*fmtStr);
+            // print new line?
+            if(*fmtStr == '\n')
+            {
+                putc('\r');
+            }
+        }
+        fmtStr++;
+    }
+}
+
+#endif
+

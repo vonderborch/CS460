@@ -1,0 +1,79 @@
+#ifndef UTYPES_H
+#define UTYPES_H
+
+//////////////////////////////////////// DEFINITIONS ////////////////////////////////////////
+
+#define NULL 0     // defines the value for null.
+#define null 0     // defines the value for null (alt-form).
+
+#define INPUTBUFFER 64
+
+// BOOL DEFINITION
+typedef enum { false, true } bool;
+
+// COMMAND TABLE
+typedef struct command_table{
+	char *name;
+	char *command;
+	int (*f)();
+	char *help;
+} COMMANDTABLE;
+
+//////////////////////////////////////// VARIABLES ////////////////////////////////////////
+////////// Global Variables  //////////
+int color;
+int pd[2] = {1, 2};
+
+//////////////////////////////////////// FUNCTIONS ////////////////////////////////////////
+////////// ucode.c //////////
+int show_menu();
+int help();
+int find_cmd(char *name);
+int sgetpid();
+int getpid();
+int ps();
+int chname();
+int kfork();
+int kswitch();
+int wait();
+int geti();
+int exit();
+int _exit(int exitValue);
+int getc();
+int putc(char c);
+int invalid(char *name);
+int kmode();
+int exec();
+int pipe();
+int pfd();
+int read_pipe();
+int write_pipe();
+int close_pipe();
+int sout();
+int sin();
+
+//////////////////////////////////////// COMMAND TABLE ////////////////////////////////////////
+COMMANDTABLE commands[] = {
+	{ "Get Process ID", "getpid", sgetpid, "Returns the proc's pid." },
+	{ "Print Status", "ps", ps, "Print the status info of the proc." },
+	{ "Change Name", "chname", chname, "Changes the proc's name." },
+	{ "Fork", "kfork", kfork, "Forks a child." },
+	{ "Switch", "switch", kswitch, "Switch processes." },
+	{ "Wait", "wait", wait, "Causes proc to wait for a zombie child." },
+	{ "KMode", "kmode", kmode, "Returns to kernal mode with the proc." },
+	{ "Exec", "exec", exec, "Executes a program." },
+	{ "Pipe", "pipe", pipe, "Creates a pipe!" },
+	{ "Print File Descriptors", "pfd", pfd, "Prints the file descriptors!" },
+	{ "Read Pipe", "read", read_pipe, "Reads from the pipe!" },
+	{ "Write Pipe", "write", write_pipe, "Writes to the pipe!" },
+	{ "Close Pipe", "close", close_pipe, "Closes a pipe!" },
+	{ "Serial In", "sin", sin, "Input a message on the serial." },
+	{ "Serial Out", "sout", sout, "Output a message from the serial." },
+	{ "Exit", "exit", exit, "Kill the proc." },
+	{ "Help", "help", help, "Shows the help menu." },
+	{0, 0, 0, 0}
+};
+
+#endif
+
+#include "ucode.c"

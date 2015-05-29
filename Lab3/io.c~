@@ -1,0 +1,13 @@
+int rgets(char buf[])
+{
+    int i = 0;
+    char c = getc();
+    while (c != '\r')
+    {
+        buf[i] = c;
+        putc(c);
+        c = getc();
+        i++;
+    }
+    buf[i] = 0;
+}

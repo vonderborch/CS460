@@ -1,0 +1,2 @@
+bcc -c -ansi io.c  ==> generate io.o file
+ar r mylib io.o   <=== add io.o to mylib

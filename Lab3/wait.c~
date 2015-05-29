@@ -1,0 +1,9 @@
+#ifndef WAIT_C
+#define WAIT_C
+
+#include "types.h"
+#include "queue.c"
+#include "kernel.c"
+#include "t.c"
+
+#endif

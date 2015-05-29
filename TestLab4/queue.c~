@@ -1,0 +1,117 @@
+#ifndef QUEUE_C
+#define QUEUE_C
+
+#include "type.h"
+
+// Schedule *ALL* the tasks!
+int scheduler()
+{
+    if (running->status == READY)
+        enqueue(&readyQueue, running);
+    else if(running->status == SLEEP)
+        enqueue(&sleepList, running);
+     running = dequeue(&readyQueue);
+  color = 0x000A + (running->pid % 6);
+}
+
+// get a FREE PROC from freeList; return PROC pointer; 
+// return 0 if no more FREE PROCs.
+PROC *get_proc()
+{
+    // simplified after doing part 4 (why have the same code repeated?)
+	if (freeList != NULL)
+		return dequeue(&freeList);
+	return 0;
+}
+
+// enter p into freeList;
+int put_proc(PROC *p)
+{
+    // even though enqueue is similar, they're different enough to mean this should be unique...
+    p->status = FREE; // free the process of its shackles!!!
+    // if we had no free procs, this'll be our first!
+    if (freeList == NULL)
+    {
+        freeList = p;
+        p->next = NULL;
+    }
+    else
+    {
+        // if we had free procs, insert this one at the front
+        // procs here have no priorities in life
+        p->next = freeList->next;
+        freeList->next = p;
+    }
+}
+
+// enter p into queue by priority; 
+int enqueue(PROC **queue, PROC *p)
+{
+    PROC *current, *next;
+
+    // Case 1: empty queue. make the passed process a new queue!
+    if ((*queue) == NULL)
+    {
+        *queue = p;
+        (*queue)->next = 0;
+    }
+    // Case 2: non-empty queue, new process has greatest priority. insert new process onto head of the queue.
+    else if (p->priority > (*queue)->priority)
+    {
+        p->next = (*queue);
+        (*queue) = p;
+    }
+    // Case 3: non-empty queue, new process needs to be inserted somewhere in it. look through the processes in the queue until we find a spot where the process' priority will be properly respected.
+    else
+    {
+        current = (*queue);
+        next = current->next;
+        
+        while (current != NULL && p->priority <= next->priority)
+        {
+            current = next;
+            next = next->next;
+        }
+        
+        current->next = p;
+        p->next = next;
+    }
+}
+
+// remove a PROC with the highest priority (the first one in queue)
+// return its pointer;
+PROC *dequeue(PROC **queue)
+{
+    // get the proc we need...
+    PROC *p = *queue;
+    // modify the queue to remove the proc...
+    if (*queue != NULL) *queue = (*queue)->next;
+    // and then return the proc we deserve!
+    return p;
+}
+
+// print the queue entries in [pid, prioirty]->  format;
+int printQueue(PROC *queue)
+{
+    PROC *p;
+    // if we don't have a queue, say so...
+    if (queue == NULL)
+    {
+        printf("There are no processes in this queue.\n");
+    }
+    // if we do, print each item in the queue
+    else
+    {
+        p = queue->next;
+        printf("[%d, %d]", queue->pid, queue->priority);
+        while (p != NULL)
+        {
+            printf(" -> [%d, %d]", p->pid, p->priority);
+            p = p->next;
+        }
+        printf(" -> NULL\n");
+    }
+}
+
+#endif
+

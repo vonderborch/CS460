@@ -1,0 +1,29 @@
+cp origImg mtximage
+cp origLib mylib
+
+echo compiling...
+   as86 -o  s.o  s.s
+   bcc  -c -ansi t.c
+
+echo linking...
+   ld86 -d s.o t.o mylib /usr/lib/bcc/libc.a
+
+echo copy a.out to mtximage/boot/mtx
+   sudo mount -o loop mtximage /mnt
+   sudo cp a.out /mnt/boot/mtx
+   sudo umount /mnt
+
+echo booting...
+qemu-system-i386 -fda mtximage -no-fd-bootchk
+
+# do some clean up
+rm *.o
+rm *~
+rm booter
+rm mtximage
+rm mylib
+rm *.out
+
+clear
+
+#  Use YOUR MTX booter of LAB#1 to boot up MTX
